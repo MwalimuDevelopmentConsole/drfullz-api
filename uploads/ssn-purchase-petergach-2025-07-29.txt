@@ -1,0 +1,19 @@
+================================================================================
+SSN PURCHASE REPORT
+================================================================================
+Generated: 7/29/2025, 5:41:43 PM
+Purchased By: petergach
+Total Cost: $12.00
+Transaction Date: 7/29/2025, 5:41:43 PM
+Filters Applied: price: 6887f23300269d3bb8896591
+ Total  Records: 1
+================================================================================
+Base       | First Name  | Last Name  | Country    | Email                   | Email Pass   | Fa Uname   | Fa Pass     | Backup Code      | Security Qa                    | State      | Gender     | Zip        | Address         | Ssn           | City       | Date Of Birth | Description        | Price      | Purchase Date 
+-----------+-------------+------------+------------+-------------------------+--------------+------------+-------------+------------------+--------------------------------+------------+------------+------------+-----------------+---------------+------------+---------------+--------------------+------------+---------------
+test 45    | Michael     | Johnson    | USA        | michael.j@example.com   | MJ#Pass123   | mjohnson   | MJ2FA!456   | PQRS-9012-TUVW   | Q1:MotherMaiden|Q2:Elementary  | IL         | Male       | 60601      | 789 Pine Blvd   | 456-78-9012   | Chicago    | 11/30/1982    | Business account   |            | 7/29/2025     
+
+================================================================================
+Total Records: 1
+Columns: 20
+Document generated successfully
+================================================================================

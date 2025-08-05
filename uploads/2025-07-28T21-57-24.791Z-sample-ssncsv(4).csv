@@ -1,0 +1,6 @@
+firstName,lastName,country,email,emailPass,faUname,faPass,backupCode,securityQa,dob,address,ssn,city,state,gender,zip,description,cs
+John,Doe,USA,john.doe@example.com,Pass123!,johnd,FaPass456!,ABCD-1234-EFGH,Q1:MyDog|Q2:BlueCar,1985-06-15,123 Main St,123-45-6789,New York,NY,Male,10001,Regular customer,4578
+Jane,Smith,USA,jane.smith@example.com,SecureP@ss,janes,JaneFA789!,WXYZ-5678-LMNO,Q1:Hometown|Q2:FirstPet,1990-03-22,456 Oak Ave,987-65-4321,Los Angeles,CA,Female,90001,Premium account,8901
+Michael,Johnson,USA,michael.j@example.com,MJ#Pass123,mjohnson,MJ2FA!456,PQRS-9012-TUVW,Q1:MotherMaiden|Q2:Elementary,1982-11-30,789 Pine Blvd,456-78-9012,Chicago,IL,Male,60601,Business account,6723
+Emily,Wilson,USA,emily.w@example.com,EmW!pass22,emilyw,EmFA@789,DEFG-3456-HIJK,Q1:FirstCar|Q2:BirthCity,1988-09-05,321 Elm St,345-67-8901,Houston,TX,Female,77001,New customer,3456
+Robert,Brown,USA,robert.b@example.com,RobPass$99,rbrown,RobFA$123,LMNO-7890-PQRS,Q1:ChildhoodStreet|Q2:FirstTeacher,1975-04-18,654 Cedar Rd,234-56-7890,Phoenix,AZ,Male,85001,Long-term customer,7890

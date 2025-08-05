@@ -1,0 +1,52 @@
+{
+  "name": "lookup-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server",
+    "dev": "nodemon server",
+    "init": "node scripts/initDatabase.js init",
+    "cleanup": "node scripts/initDatabase.js cleanup",
+    "seed-tasks": "node -e \"require('./seeders/taskSeeder').seedTasks().then(() => process.exit(0))\"",
+    "seed-config": "node -e \"require('./seeders/configSeeder').seedConfigurations().then(() => process.exit(0))\"",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.10.0",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.19.0",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "csv-parser": "^3.0.0",
+    "csv-writer": "^1.6.0",
+    "date-fns": "^2.29.3",
+    "dotenv": "^16.0.3",
+    "escape-string-regexp": "^5.0.0",
+    "escape-string-regexp-node": "^1.0.2",
+    "express": "^4.18.2",
+    "express-async-handler": "^1.2.0",
+    "express-rate-limit": "^6.6.0",
+    "jsonwebtoken": "^8.5.1",
+    "moment": "^2.30.1",
+    "moment-timezone": "^0.5.45",
+    "mongoose": "^6.7.0",
+    "mongoose-sequence": "^5.3.1",
+    "multer": "^2.0.1",
+    "node-cron": "^3.0.2",
+    "nodejs-base64": "^2.0.0",
+    "pm2": "^5.3.0",
+    "unirest": "^0.6.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}

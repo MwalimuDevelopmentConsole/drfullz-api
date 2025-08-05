@@ -1,0 +1,19 @@
+================================================================================
+SSN PURCHASE REPORT
+================================================================================
+Generated: 7/29/2025, 5:20:50 PM
+Purchased By: petergach
+Total Cost: $12.00
+Transaction Date: 7/29/2025, 5:20:50 PM
+Filters Applied: price: 6887f23300269d3bb8896591
+ Total  Records: 1
+================================================================================
+Base       | First Name  | Last Name  | Country    | Email                    | Email Pass   | Fa Uname   | Fa Pass      | Backup Code      | Security Qa               | State      | Gender     | Zip        | Address       | Ssn           | City          | Date Of Birth | Description       | Price      | Purchase Date 
+-----------+-------------+------------+------------+--------------------------+--------------+------------+--------------+------------------+---------------------------+------------+------------+------------+---------------+---------------+---------------+---------------+-------------------+------------+---------------
+test 45    | Jane        | Smith      | USA        | jane.smith@example.com   | securep@ss   | janes      | JaneFA789!   | WXYZ-5678-LMNO   | Q1:Hometown|Q2:FirstPet   | CA         | Female     | 90001      | 456 Oak Ave   | 987-65-4321   | Los Angeles   | 3/22/1990     | Premium account   |            | 7/29/2025     
+
+================================================================================
+Total Records: 1
+Columns: 20
+Document generated successfully
+================================================================================
