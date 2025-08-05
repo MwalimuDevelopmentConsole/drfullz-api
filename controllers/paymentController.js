@@ -437,7 +437,7 @@ const createPayment = asyncHandler(async (req, res) => {
   const user = await User.findOne({ username });
 
   if (!user) {
-    const response = formatResponse(false, null, "User not found", 404);
+    const response = formatResponse(false, null, "Add username to your telegram account to continue", 404);
     return res.status(response.statusCode).json(response);
   }
   const userId = user._id.toString();
