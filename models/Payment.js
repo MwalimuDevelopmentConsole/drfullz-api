@@ -13,6 +13,7 @@ const transactionSchema = new mongoose.Schema({
   paymentId: {
     type: String,
     required: false,
+    sparse: true
   },
   purchaseId: String,
   orderId: String,
