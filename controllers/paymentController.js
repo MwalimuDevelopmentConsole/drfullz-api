@@ -2,6 +2,7 @@
 const Transaction = require("../models/Payment");
 const User = require("../models/User");
 const axios = require("axios");
+const crypto = require("crypto");
 
 // Error handling wrapper
 const asyncHandler = (fn) => (req, res, next) => {
@@ -40,6 +41,14 @@ const validatePaymentData = (data) => {
     errors,
   };
 };
+
+function generateUniqueString(length = 10) {
+  const bytes = crypto.randomBytes(Math.ceil(length * 0.75)); // base64 expands ~33%
+  return bytes
+    .toString("base64")
+    .replace(/[^a-zA-Z0-9]/g, "") // remove +, /, = characters
+    .slice(0, length);
+}
 
 // Pure function to calculate remaining amount for partial payments
 const calculateRemainingAmount = (priceAmount, actuallyPaid) => {
@@ -437,7 +446,12 @@ const createPayment = asyncHandler(async (req, res) => {
   const user = await User.findOne({ username });
 
   if (!user) {
-    const response = formatResponse(false, null, "Add username to your telegram account to continue", 404);
+    const response = formatResponse(
+      false,
+      null,
+      "Add username to your telegram account to continue",
+      404
+    );
     return res.status(response.statusCode).json(response);
   }
   const userId = user._id.toString();
@@ -466,6 +480,7 @@ const createPayment = asyncHandler(async (req, res) => {
       description: description || `Balance deposit by ${user.username}`,
       remainingAmount: parseFloat(amount),
       transactionType: "crypto_payment",
+      paymentId: generateUniqueString(),
     });
 
     await transaction.save();
