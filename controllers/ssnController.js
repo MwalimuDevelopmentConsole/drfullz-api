@@ -478,7 +478,7 @@ const checkOutSSNByNumber = async (req, res) => {
     res.json({
       message: "File saved successfully",
       filename,
-      path: `${API_DOMAIN}/uploads/${filename}`,
+      path: `${process.env.API_DOMAIN}/uploads/${filename}`,
       size: fileStats.size,
     });
   } catch (error) {
