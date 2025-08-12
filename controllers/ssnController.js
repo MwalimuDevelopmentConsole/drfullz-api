@@ -283,7 +283,20 @@ const checkOutSSNByNumber = async (req, res) => {
       delete filters.base;
     }
 
-    console.log(filters);
+    const { yearFrom, yearTo } = filters;
+
+    // Add dob filter if yearFrom/yearTo exist
+    if (yearFrom || yearTo) {
+      filters.dob = {};
+
+      if (yearFrom) {
+        filters.dob.$gte = new Date(`${yearFrom}-01-01`);
+      }
+      if (yearTo) {
+        filters.dob.$lte = new Date(`${yearTo}-12-31`);
+      }
+    }
+
 
     // Input validation
     if (!username)
@@ -319,10 +332,15 @@ const checkOutSSNByNumber = async (req, res) => {
 
     const query = buildQuery(filters);
 
-    // Find SSN records
-    const ssn = await SsnDob.find(query).limit(number).populate("price").exec();
+    // Remove them from filters
+    // delete filters.yearFrom;
+    // delete filters.yearTo;
 
-    console.log(ssn);
+
+    // Find SSN records
+    const ssn = await SsnDob.find(filters).limit(number).populate("price").exec();
+
+    // console.log(ssn);
 
     if (!ssn || ssn.length === 0) {
       return res
@@ -434,7 +452,7 @@ const checkOutSSNByNumber = async (req, res) => {
 
     // Generate filename with better sanitization
     const sanitizedUsername = username.replace(/[^a-zA-Z0-9]/g, "_");
-    const timestamp = new Date().toISOString().split("T")[0];
+    const timestamp = new Date().toISOString();
     const filename = `ssn-purchase-${sanitizedUsername}-${timestamp}.txt`;
     const filePath = path.join(uploadsDir, filename);
 
@@ -475,8 +493,8 @@ const checkOutSSNByNumber = async (req, res) => {
 // Helper function for date filtering
 const buildDateFilter = (filters) => {
   const dateFilter = {};
-  if (filters.dob) dateFilter.$gte = new Date(filters.dob);
-  if (filters.dobMax) dateFilter.$lte = new Date(filters.dobMax);
+  if (filters.yearFrom) dateFilter.$gte = new Date(filters.yearFrom);
+  if (filters.yearTo) dateFilter.$lte = new Date(filters.yearTo);
   return dateFilter;
 };
 

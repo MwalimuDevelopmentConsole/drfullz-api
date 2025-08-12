@@ -641,10 +641,10 @@ const handleNowPaymentsWebhook = asyncHandler(async (req, res) => {
       case "finished":
         // Payment completed successfully
         transaction.finishedAt = new Date();
-        transaction.amountReceived = parseFloat(actually_paid || 0);
+        transaction.amountReceived = parseFloat(price_amount || 0);
 
         // Add balance to user
-        const amountToAdd = parseFloat(actually_paid || price_amount);
+        const amountToAdd = parseFloat(price_amount);
         user.balance += amountToAdd;
         await user.save();
 
