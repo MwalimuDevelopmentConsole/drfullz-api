@@ -409,6 +409,7 @@ const checkOutSSNByNumber = async (req, res) => {
         description: item.description || "N/A",
         price: item.price.amount,
         purchaseDate: new Date(),
+        enrollment: item.enrollment || "N/A"
       })),
       TxtBuilder.sort((a, b) => a.lastName.localeCompare(b.lastName))
     )(ssn);
