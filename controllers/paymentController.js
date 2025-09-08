@@ -3,6 +3,7 @@ const Transaction = require("../models/Payment");
 const User = require("../models/User");
 const axios = require("axios");
 const crypto = require("crypto");
+const { logBalanceChange } = require("./userBalLogController");
 
 // Error handling wrapper
 const asyncHandler = (fn) => (req, res, next) => {
@@ -651,6 +652,13 @@ const handleNowPaymentsWebhook = asyncHandler(async (req, res) => {
         console.log(
           `Payment completed: ${amountToAdd} added to user ${transaction.userId} for transaction ${transactionId}`
         );
+        logBalanceChange(
+          user._id,
+          amountToAdd,
+          "credit",
+          `Deposit via NOWPayments, Transaction ID: ${transactionId}`,
+          user.balance
+        ).catch((err) => console.error("Error logging balance change:", err));
         break;
 
       case "failed":
@@ -753,7 +761,7 @@ module.exports = {
   getTransaction,
   addBalance,
   deductBalance,
-  deductBalanceForLookup, // For use by Forest Lookup API
+  deductBalanceForLookup,
   getAllTransactions,
 
   // NOWPayments integration

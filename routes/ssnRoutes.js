@@ -14,6 +14,8 @@ router
   .post("/upload",  upload.single("file"), csvUploadController.uploadSsn)
   .post("/update/seller", ssnController.updateSellerProductStatus)
   .get("/", ssnController.getAllSsns)
-  .get("/all/:sellerId", ssnController.getAllSsnsBySellerId);
+  .get("/all/:sellerId", ssnController.getAllSsnsBySellerId)
+  .get("/admin/all", authenticateToken, ssnController.getAllSsnsAdmin)
+  .post("/delete", ssnController.deleteProducts);
 
 module.exports = router;

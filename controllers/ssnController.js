@@ -4,6 +4,7 @@ const User = require("../models/User");
 const TxtBuilder = require("../utils/txtBuilder"); // Import the utility
 const fs = require("fs");
 const path = require("path");
+const { logBalanceChange } = require("./userBalLogController");
 
 const createSsnDob = async (req, res) => {
   const {
@@ -297,7 +298,6 @@ const checkOutSSNByNumber = async (req, res) => {
       }
     }
 
-
     // Input validation
     if (!username)
       return res.status(400).json({ message: "Username is required" });
@@ -336,9 +336,11 @@ const checkOutSSNByNumber = async (req, res) => {
     // delete filters.yearFrom;
     // delete filters.yearTo;
 
-
     // Find SSN records
-    const ssn = await SsnDob.find(filters).limit(number).populate("price").exec();
+    const ssn = await SsnDob.find(filters)
+      .limit(number)
+      .populate("price")
+      .exec();
 
     // console.log(ssn);
 
@@ -387,8 +389,9 @@ const checkOutSSNByNumber = async (req, res) => {
     }
 
     // Transform data for better display using functional approach
-    const transformedData = TxtBuilder.pipe(
-      TxtBuilder.transform((item) => ({
+
+    const transformedData = ssn
+      .map((item) => ({
         base: item.price.base,
         firstName: item.firstName,
         lastName: item.lastName,
@@ -409,31 +412,45 @@ const checkOutSSNByNumber = async (req, res) => {
         description: item.description || "N/A",
         price: item.price.amount,
         purchaseDate: new Date(),
-        enrollment: item.enrollment || "N/A"
-      })),
-      TxtBuilder.sort((a, b) => a.lastName.localeCompare(b.lastName))
-    )(ssn);
+        enrollment: item.enrollment || "N/A",
+      }))
+      .sort((a, b) => a.lastName.localeCompare(b.lastName));
+
+    // Metadata section
+    const metadata = {
+      purchasedBy: username,
+      totalCost: `$${totalCost.toFixed(2)}`,
+      transactionDate: new Date().toLocaleString(),
+      filtersApplied:
+        Object.keys(filters).length > 0
+          ? Object.entries(filters)
+              .filter(([_, value]) => value)
+              .map(([key, value]) => `${key}: ${value}`)
+              .join(", ")
+          : "None",
+    };
+
+    const metadataSection = [
+      "Purchase Report",
+      "========================================",
+      ...Object.entries(metadata).map(([key, value]) => `${key}: ${value}`),
+      "========================================",
+    ].join("\n");
 
     // Build the text file using functional approach
-    const txtContent = TxtBuilder.build(
-      {
-        title: "SSN Purchase Report",
-        metadata: {
-          purchasedBy: username,
-          totalCost: `$${totalCost.toFixed(2)}`,
-          transactionDate: new Date().toLocaleString(),
-          filtersApplied:
-            Object.keys(filters).length > 0
-              ? Object.entries(filters)
-                  .filter(([_, value]) => value)
-                  .map(([key, value]) => `${key}: ${value}`)
-                  .join(", ")
-              : "None",
-        },
-        includeStats: true,
-      },
-      transformedData
-    );
+    // Records section
+    const recordsSection = transformedData
+      .map((item, index) => {
+        const recordHeader = `Record ${index + 1}\n${"=".repeat(40)}`;
+        const recordBody = Object.entries(item)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join("\n");
+        return `${recordHeader}\n${recordBody}`;
+      })
+      .join("\n\n");
+
+    // Final text content
+    const txtContent = `${metadataSection}\n\n${recordsSection}`;
 
     console.log(txtContent);
     const uploadsDir = path.join(process.cwd(), "uploads");
@@ -453,7 +470,7 @@ const checkOutSSNByNumber = async (req, res) => {
 
     // Generate filename with better sanitization
     const sanitizedUsername = username.replace(/[^a-zA-Z0-9]/g, "_");
-    const timestamp = new Date().toISOString();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const filename = `ssn-purchase-${sanitizedUsername}-${timestamp}.txt`;
     const filePath = path.join(uploadsDir, filename);
 
@@ -476,12 +493,22 @@ const checkOutSSNByNumber = async (req, res) => {
     const fileStats = fs.statSync(filePath);
     console.log("File created successfully. Size:", fileStats.size, "bytes");
 
+    logBalanceChange(
+      user._id,
+      totalCost,
+      "debit",
+      `${process.env.API_DOMAIN}/uploads/${filename}`,
+      user.balance
+    ).catch((err) => console.error("Error logging balance change:", err));
+
     res.json({
       message: "File saved successfully",
       filename,
       path: `${process.env.API_DOMAIN}/uploads/${filename}`,
       size: fileStats.size,
     });
+
+    // res.sendFile(path.resolve(`./uploads/${filename}`));
   } catch (error) {
     console.error("Error checking out SSN by number:", error);
     res.status(500).json({
@@ -490,6 +517,79 @@ const checkOutSSNByNumber = async (req, res) => {
     });
   }
 };
+
+const deleteProducts = async (req, res) => {
+  const { productIds } = req.body;
+
+  if (!Array.isArray(productIds) || productIds.length === 0) {
+    return res
+      .status(400)
+      .json({ message: "productIds must be a non-empty array." });
+  }
+
+  try {
+    const result = await SsnDob.deleteMany({ _id: { $in: productIds } });
+
+    return res.status(200).json({
+      message: "Ssn deleted permanently.",
+      deletedCount: result.deletedCount,
+    });
+  } catch (err) {
+    console.error("Error deleting orders:", err);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+const getAllSsnsAdmin = asyncHandler(async (req, res) => {
+  // Get pagination parameters
+  const page = parseInt(req?.query?.page) || 1;
+  const perPage = parseInt(req?.query?.perPage) || 20;
+  const skip = (page - 1) * perPage;
+
+  // Extract filter parameters
+  const { base, status, sellerId, paid } = req.query;
+
+  // Build filter object
+  const filters = {};
+
+  // Only add non-empty filters
+  if (base) filters.price = base;
+  if (sellerId) filters.sellerId = sellerId;
+  if (status) filters.status = status;
+  if (paid) filters.isPaid = paid;
+
+  try {
+    const [ssns, count] = await Promise.all([
+      SsnDob.find(filters)
+        .skip(parseInt(skip))
+        .limit(parseInt(perPage))
+        .populate("price")
+        .lean()
+        .exec(),
+      SsnDob.countDocuments(filters),
+    ]);
+
+    if (!ssns?.length) {
+      return res.status(200).json({
+        message: "No records found",
+        count: 0,
+        ssns: [],
+      });
+    }
+
+    res.json({
+      ssns,
+      count,
+      currentPage: page,
+      totalPages: Math.ceil(count / perPage),
+    });
+  } catch (error) {
+    console.error("Error fetching SSNs:", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching records", error: error.message });
+  }
+});
 
 // Helper function for date filtering
 const buildDateFilter = (filters) => {
@@ -505,4 +605,6 @@ module.exports = {
   getAllSsnsBySellerId,
   updateSellerProductStatus,
   checkOutSSNByNumber,
+  deleteProducts,
+  getAllSsnsAdmin,
 };
