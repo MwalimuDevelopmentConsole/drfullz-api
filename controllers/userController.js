@@ -192,6 +192,20 @@ const createUser = asyncHandler(async (req, res) => {
     return res.status(response.statusCode).json(response);
   }
 
+  const usernameDuplicate = await User.findOne({
+    username: req.body.username,
+  });
+  
+  if (usernameDuplicate) {
+    const response = formatResponse(
+      false,
+      null,
+      "User with this username already exists",
+      409
+    );
+    return res.status(response.statusCode).json(response);
+  }
+
   // Hash password
   const hashedPassword = await bcrypt.hash(req.body.password, 12);
 
@@ -511,5 +525,5 @@ module.exports = {
   getOwnProfile,
   updateOwnProfile,
   getOwnBalance,
-  createBotUser
+  createBotUser,
 };

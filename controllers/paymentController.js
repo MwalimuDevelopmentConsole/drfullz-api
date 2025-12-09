@@ -167,8 +167,16 @@ const getTransaction = asyncHandler(async (req, res) => {
 
 // get all transactions for all users
 const getAllTransactions = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, status, transactionType } = req.query;
+  const { page = 1, limit = 30, status, transactionType } = req.query;
+  const user = req.user;
+  if (!user) {
+    const response = formatResponse(false, null, "User not found", 404);
+    return res.status(response.statusCode).json(response);
+  }
   const filter = {};
+  if (user.role !== "admin") {
+    filter.userId = user._id;
+  }
   if (status) {
     filter.status = status;
   }
@@ -442,7 +450,11 @@ const getMinimumAmount = asyncHandler(async (req, res) => {
 
 // Create payment request
 const createPayment = asyncHandler(async (req, res) => {
-  const { amount, cryptoCurrency, username, description } = req.body;
+  let { amount, cryptoCurrency, username, description } = req.body;
+
+  if(!username) {
+    username = req.user.username;
+  }
 
   const user = await User.findOne({ username });
 

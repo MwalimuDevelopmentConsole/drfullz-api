@@ -36,6 +36,7 @@ const SsnSchema = new mongoose.Schema(
     ssn: { type: String, required: true },
     cs: { type: String, required: false },
     enrollment: { type: String, required: false },
+    fstatus: { type: String, required: false },
     city: { type: String, required: true },
     status: { type: String, default: "Available" },
     isPaid: { type: String, default: "Not Paid" },

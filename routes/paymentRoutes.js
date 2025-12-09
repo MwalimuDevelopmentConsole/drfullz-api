@@ -25,13 +25,13 @@ const webhookRateLimit = createRateLimit(60 * 1000, 100, 'Too many webhook reque
 // NOWPayments webhook (no authentication required)
 router.post('/nowpayments/webhook', webhookRateLimit, paymentController.handleNowPaymentsWebhook);
 
-// Get supported currencies (public)
-router.get('/currencies', paymentController.getAllCurrencies);
+// Get supported currencies 
+router.get('/currencies', authenticateToken, paymentController.getAllCurrencies);
 
-// Get minimum payment amount (public)
-router.get('/minimum/:crypto', paymentController.getMinimumAmount);
+// Get minimum payment amount 
+router.get('/minimum/:crypto', authenticateToken, paymentController.getMinimumAmount);
 
-router.get('/all-transactions', authenticateToken, isAdmin, paymentController.getAllTransactions);
+router.get('/all-transactions', authenticateToken,  paymentController.getAllTransactions);
 
 // ================================
 // AUTHENTICATED CLIENT ROUTES

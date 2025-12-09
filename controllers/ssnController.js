@@ -5,6 +5,8 @@ const TxtBuilder = require("../utils/txtBuilder"); // Import the utility
 const fs = require("fs");
 const path = require("path");
 const { logBalanceChange } = require("./userBalLogController");
+const { default: mongoose } = require("mongoose");
+const Cart = require("../models/Cart");
 
 const createSsnDob = async (req, res) => {
   const {
@@ -92,7 +94,7 @@ const getAllSsns = asyncHandler(async (req, res) => {
   const filters = { status: "Available" };
 
   // Only add non-empty filters
-  if (base) filters.price = base;
+  if (base) filters.price = mongoose.Types.ObjectId(base);
   if (city) filters.city = { $regex: city, $options: "i" };
   if (country) filters.country = { $regex: country, $options: "i" };
   if (zip) filters.zip = { $regex: zip, $options: "i" };
@@ -413,6 +415,7 @@ const checkOutSSNByNumber = async (req, res) => {
         price: item.price.amount,
         purchaseDate: new Date(),
         enrollment: item.enrollment || "N/A",
+        fstatus: item.fstatus || "N/A",
       }))
       .sort((a, b) => a.lastName.localeCompare(b.lastName));
 
@@ -500,6 +503,11 @@ const checkOutSSNByNumber = async (req, res) => {
       `${process.env.API_DOMAIN}/uploads/${filename}`,
       user.balance
     ).catch((err) => console.error("Error logging balance change:", err));
+
+    await Cart.updateMany(
+      { items: { $in: ssn } }, // Filter: Find any cart containing these items
+      { $pull: { items: { $in: ssn } } } // Action: Remove these items
+    );
 
     res.json({
       message: "File saved successfully",

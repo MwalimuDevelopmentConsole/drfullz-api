@@ -20,10 +20,14 @@ const formatResponse = (success, data, message = null, statusCode = 200) => ({
 const validateUserData = (userData) => {
   const errors = [];
   
-  if (!userData.email) {
-    errors.push('Email is required');
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email)) {
-    errors.push('Valid email is required');
+  // if (!userData.email) {
+  //   errors.push('Email is required');
+  // } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email)) {
+  //   errors.push('Valid email is required');
+  // }
+
+  if(!userData.username) {
+    errors.push('Username is required');
   }
   
   if (!userData.password) {
@@ -67,15 +71,15 @@ const generateTokens = (user) => {
 
 // Login
 const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, username } = req.body;
   
-  if (!email || !password) {
-    const response = formatResponse(false, null, 'Email and password are required', 400);
+  if ( !password) {
+    const response = formatResponse(false, null, 'Username and password are required', 400);
     return res.status(response.statusCode).json(response);
   }
   
   // Find user
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ $or: [ { email }, { username } ] });
   
   if (!user) {
     const response = formatResponse(false, null, 'Invalid credentials, no user found', 401);
@@ -128,9 +132,9 @@ const register = asyncHandler(async (req, res) => {
   }
   
   // Check if user already exists
-  const existingUser = await User.findOne({ email: req.body.email });
+  const existingUser = await User.findOne({ username: req.body.username });
   if (existingUser) {
-    const response = formatResponse(false, null, 'User with this email already exists', 409);
+    const response = formatResponse(false, null, 'User with this username already exists', 409);
     return res.status(response.statusCode).json(response);
   }
   
