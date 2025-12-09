@@ -296,31 +296,26 @@ const verifyToken = asyncHandler(async (req, res) => {
 
 // Change password with current password verification
 const changePassword = asyncHandler(async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
+  const { password } = req.body;
   
-  if (!currentPassword || !newPassword) {
-    const response = formatResponse(false, null, 'Current and new passwords are required', 400);
+  if (!password) {
+    const response = formatResponse(false, null, 'Password is required', 400);
     return res.status(response.statusCode).json(response);
   }
   
-  if (newPassword.length < 6) {
+  if (password.length < 6) {
     const response = formatResponse(false, null, 'New password must be at least 6 characters long', 400);
     return res.status(response.statusCode).json(response);
   }
   
-  const user = await User.findById(req.user.id);
+  const user = await User.findById(req.user._id);
   
   if (!user) {
     const response = formatResponse(false, null, 'User not found', 404);
     return res.status(response.statusCode).json(response);
   }
   
-  // Verify current password
-  const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
-  if (!isCurrentPasswordValid) {
-    const response = formatResponse(false, null, 'Current password is incorrect', 400);
-    return res.status(response.statusCode).json(response);
-  }
+  const newPassword = password;
   
   // Hash and update new password
   user.password = await bcrypt.hash(newPassword, 12);
