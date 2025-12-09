@@ -110,7 +110,7 @@ const uploadSsn = async (req, res) => {
       status: seller?.productStatus || "Available",
       isPaid: "Not Paid",
       productType: "ssn",
-      fstatus: result?.fstatus || "",
+      fStatus: result?.fStatus || "",
       enrollment: result?.enrollment || ""
     }));
 

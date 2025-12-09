@@ -86,6 +86,7 @@ const getAllSsns = asyncHandler(async (req, res) => {
     cs,
     name,
     isBot = "no",
+    fStatus,
   } = req.query;
 
   console.log(req.query);
@@ -101,6 +102,7 @@ const getAllSsns = asyncHandler(async (req, res) => {
   if (state) filters.state = { $regex: state, $options: "i" };
   if (cs) filters.cs = { $regex: cs, $options: "i" };
   if (name) filters.firstName = { $regex: name, $options: "i" };
+  if (fStatus) filters.fStatus = { $regex: fStatus, $options: "i" };
 
   // Handle date range if provided
   if (dob && dobMax) {
@@ -415,7 +417,7 @@ const checkOutSSNByNumber = async (req, res) => {
         price: item.price.amount,
         purchaseDate: new Date(),
         enrollment: item.enrollment || "N/A",
-        fstatus: item.fstatus || "N/A",
+        fStatus: item.fStatus || "N/A",
       }))
       .sort((a, b) => a.lastName.localeCompare(b.lastName));
 
