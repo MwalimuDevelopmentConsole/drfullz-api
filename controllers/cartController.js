@@ -23,9 +23,11 @@ const getCart = async (req, res) => {
     });
 
     if (!cart) {
-      cart.items = [];
-      cart.user = userId;
-      return res.json({ cart, userBalance });
+      // Create a new cart object for response (don't save empty cart to DB)
+      return res.json({
+        cart: { items: [], user: userId },
+        userBalance
+      });
     }
 
     // --- CRITICAL LOGIC START ---
