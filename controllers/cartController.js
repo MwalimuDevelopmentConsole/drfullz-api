@@ -9,6 +9,13 @@ const getCart = async (req, res) => {
   try {
     const userId = req.user._id; // From auth middleware
 
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const userBalance = user.balance || 0;
+
     let cart = await Cart.findOne({ user: userId }).populate({
       path: "items",
       select: "_id price status",
@@ -18,7 +25,7 @@ const getCart = async (req, res) => {
     if (!cart) {
       cart.items = [];
       cart.user = userId;
-      return res.json({ cart });
+      return res.json({ cart, userBalance });
     }
 
     // --- CRITICAL LOGIC START ---
@@ -39,7 +46,7 @@ const getCart = async (req, res) => {
     }
     // --- CRITICAL LOGIC END ---
 
-    res.json({ cart });
+    res.json({ cart, userBalance });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Something went wrong." });
@@ -260,7 +267,7 @@ const getMyOrders = async (req, res) => {
       ...dateFilter,
     };
 
-    console.log(query)
+    console.log(query);
 
     const orders = await SsnDob.find(query)
       .skip((page - 1) * limit)

@@ -89,7 +89,7 @@ const getAllSsns = asyncHandler(async (req, res) => {
     fStatus,
   } = req.query;
 
-  console.log(req.query);
+  // console.log(req.query);
 
   // Build filter object
   const filters = { status: "Available" };
