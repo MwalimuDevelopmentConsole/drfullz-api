@@ -4,8 +4,8 @@ const allowedOrigins = [
   "https://www.drfullz.com",
   "http://192.168.100.45:5173",
   "http://192.168.100.45:3000",
-  "https://admin.drfullz.com",
-  "https://www.admin.drfullz.com",
+  "https://admin.fullducks.com",
+  "https://www.admin.fullducks.com",
   "https://www.fullducks.com",
   "https://fullducks.com",
 ];
