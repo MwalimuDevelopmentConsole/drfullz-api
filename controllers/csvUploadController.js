@@ -14,11 +14,6 @@ const uploadSsn = async (req, res) => {
 
     const csvfile = req.file;
     console.log(csvfile.mimetype);
-    // if (csvfile.mimetype !== "text/csv") {
-    //   return res
-    //     .status(400)
-    //     .json({ message: "Invalid file type. Only CSV files are allowed." });
-    // }
 
     // Validate required fields in request body
     const { sellerId, baseId, userId } = req.body;
@@ -35,26 +30,23 @@ const uploadSsn = async (req, res) => {
     const base = baseData.base;
     const price = baseId;
 
-
-
     if (!mongoose.Types.ObjectId.isValid(price)) {
       return res.status(400).json({ message: "Invalid price ID format" });
     }
 
+    // Only fields that are required:true in the SsnDob model
+    // FName, LName, DOB, SSN, Address, City, Email, Username, Password, BackupCode, Status
     const requiredFields = [
-      "firstName",
-      "lastName",
-      "country",
-      "email",
-      "emailPass",
-      "faUname",
-      "faPass",
-      "backupCode",
-      "securityQa",
-      "dob",
-      "address",
-      "ssn",
-      "city",
+      "FName",
+      "LName",
+      "DOB",
+      "SSN",
+      "Address",
+      "City",
+      "Email",
+      "Username",
+      "Password",
+      "BackupCode",
     ];
 
     const results = [];
@@ -79,39 +71,35 @@ const uploadSsn = async (req, res) => {
     if (missingFields.size > 0) {
       return res.status(400).json({
         message: `Missing required fields in CSV: ${Array.from(
-          missingFields
+          missingFields,
         ).join(", ")}`,
       });
     }
 
-    // Map data to Mongoose schema
+    // Map CSV columns to SsnDob schema fields
     const ssnDobs = results.map((result) => ({
       sellerId: userId,
-      firstName: result.firstName,
-      lastName: result.lastName,
-      country: result.country,
-      email: result.email,
-      emailPass: result.emailPass,
-      faUname: result.faUname,
-      faPass: result.faPass,
-      backupCode: result.backupCode,
-      securityQa: result.securityQa,
-      state: result.state || null,
-      gender: result.gender || null,
       base,
       price: new mongoose.Types.ObjectId(price),
-      zip: result.zip || null,
-      description: result.description || null,
-      dob: new Date(result.dob),
-      address: result.address,
-      ssn: result.ssn,
-      cs: result.cs || null,
-      city: result.city,
-      status: seller?.productStatus || "Available",
+      FName: result.FName,
+      LName: result.LName,
+      DOB: new Date(result.DOB),
+      SSN: result.SSN,
+      Address: result.Address,
+      City: result.City,
+      Email: result.Email,
+      // Required fields
+      Username: result.Username,
+      Password: result.Password,
+      BackupCode: result.BackupCode,
+      // Optional fields — required: false in the model
+      State: result.State || null,
+      Zip: result.Zip || null,
+      Description: result.Description || null,
+      EnrollmentDetails: result.EnrollmentDetails || null,
+      EnrollmentStatus: result.EnrollmentStatus || null,
       isPaid: "Not Paid",
       productType: "ssn",
-      fStatus: result?.fStatus || "",
-      enrollment: result?.enrollment || ""
     }));
 
     // Insert data into MongoDB

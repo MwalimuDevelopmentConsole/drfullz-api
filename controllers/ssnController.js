@@ -11,52 +11,61 @@ const Cart = require("../models/Cart");
 const createSsnDob = async (req, res) => {
   const {
     base,
-    firstName,
-    lastName,
+    FName,
+    LName,
     sellerId,
-    country,
-    state,
-    city,
-    zip,
-    dob,
-    cs,
+    State,
+    City,
+    Zip,
+    DOB,
     price,
-    address,
-    ssn,
-    description,
+    Address,
+    SSN,
+    Email,
+    Username,
+    Password,
+    BackupCode,
+    Description,
+    EnrollmentDetails,
+    EnrollmentStatus,
   } = req.body;
 
   if (
     !base ||
-    !firstName ||
-    !lastName ||
-    !country ||
+    !FName ||
+    !LName ||
     !sellerId ||
-    !state ||
-    !city ||
-    !zip ||
-    !dob ||
+    !City ||
+    !DOB ||
     !price ||
-    !address ||
-    !ssn
+    !Address ||
+    !SSN ||
+    !Email ||
+    !Username ||
+    !Password ||
+    !BackupCode
   )
     return res.status(400).json({ message: "All fields are required" });
 
   const ssnObject = {
     base,
     sellerId,
-    firstName,
-    lastName,
-    country,
-    state,
-    city,
-    zip,
-    dob,
-    cs,
+    FName,
+    LName,
+    State,
+    City,
+    Zip,
+    DOB,
     price,
-    address,
-    ssn,
-    description,
+    Address,
+    SSN,
+    Email,
+    Username,
+    Password,
+    BackupCode,
+    Description,
+    EnrollmentDetails,
+    EnrollmentStatus,
   };
 
   const ssndob = await SsnDob.create(ssnObject);
@@ -80,35 +89,30 @@ const getAllSsns = asyncHandler(async (req, res) => {
     state,
     city,
     zip,
-    country,
     dob,
     dobMax,
-    cs,
     name,
     isBot = "no",
-    fStatus,
+    enrollmentStatus,
   } = req.query;
-
-  // console.log(req.query);
 
   // Build filter object
   const filters = { status: "Available" };
 
   // Only add non-empty filters
   if (base) filters.price = mongoose.Types.ObjectId(base);
-  if (city) filters.city = { $regex: city, $options: "i" };
-  if (country) filters.country = { $regex: country, $options: "i" };
-  if (zip) filters.zip = { $regex: zip, $options: "i" };
-  if (state) filters.state = { $regex: state, $options: "i" };
-  if (cs) filters.cs = { $regex: cs, $options: "i" };
-  if (name) filters.firstName = { $regex: name, $options: "i" };
-  if (fStatus) filters.fStatus = { $regex: fStatus, $options: "i" };
+  if (city) filters.City = { $regex: city, $options: "i" };
+  if (zip) filters.Zip = { $regex: zip, $options: "i" };
+  if (state) filters.State = { $regex: state, $options: "i" };
+  if (name) filters.FName = { $regex: name, $options: "i" };
+  if (enrollmentStatus)
+    filters.EnrollmentStatus = { $regex: enrollmentStatus, $options: "i" };
 
   // Handle date range if provided
   if (dob && dobMax) {
     const startDate = new Date(`${dob}-01-01`);
     const endDate = new Date(`${dobMax}-12-31`);
-    filters.dob = { $gte: startDate, $lte: endDate };
+    filters.DOB = { $gte: startDate, $lte: endDate };
   }
 
   try {
@@ -146,42 +150,39 @@ const getAllSsns = asyncHandler(async (req, res) => {
         },
         {
           $project: {
-            // Required fields
-            firstName: 1,
-            dobYear: { $year: "$dob" },
-            state: 1,
-            zip: 1,
-            description: 1,
+            // Plain fields shown to buyer
+            FName: 1,
+            dobYear: { $year: "$DOB" },
+            State: 1,
+            Zip: 1,
+            Description: 1,
+            EnrollmentStatus: 1,
+            EnrollmentDetails: 1,
 
-            // Boolean flags for other fields
-            lastName: {
-              $cond: [{ $ifNull: ["$lastName", false] }, true, false],
+            // Boolean flags — confirms presence without exposing values
+            LName: {
+              $cond: [{ $ifNull: ["$LName", false] }, true, false],
             },
-            country: { $cond: [{ $ifNull: ["$country", false] }, true, false] },
-            email: { $cond: [{ $ifNull: ["$email", false] }, true, false] },
-            emailPass: {
-              $cond: [{ $ifNull: ["$emailPass", false] }, true, false],
+            Email: { $cond: [{ $ifNull: ["$Email", false] }, true, false] },
+            Username: {
+              $cond: [{ $ifNull: ["$Username", false] }, true, false],
             },
-            faUname: { $cond: [{ $ifNull: ["$faUname", false] }, true, false] },
-            faPass: { $cond: [{ $ifNull: ["$faPass", false] }, true, false] },
-            backupCode: {
-              $cond: [{ $ifNull: ["$backupCode", false] }, true, false],
+            Password: {
+              $cond: [{ $ifNull: ["$Password", false] }, true, false],
             },
-            securityQa: {
-              $cond: [{ $ifNull: ["$securityQa", false] }, true, false],
+            BackupCode: {
+              $cond: [{ $ifNull: ["$BackupCode", false] }, true, false],
             },
-            address: { $cond: [{ $ifNull: ["$address", false] }, true, false] },
-            ssn: { $cond: [{ $ifNull: ["$ssn", false] }, true, false] },
-            city: { $cond: [{ $ifNull: ["$city", false] }, true, false] },
-            gender: { $cond: [{ $ifNull: ["$gender", false] }, true, false] },
-            cs: { $cond: [{ $ifNull: ["$cs", false] }, true, false] },
+            Address: { $cond: [{ $ifNull: ["$Address", false] }, true, false] },
+            SSN: { $cond: [{ $ifNull: ["$SSN", false] }, true, false] },
+            City: { $cond: [{ $ifNull: ["$City", false] }, true, false] },
 
             // Price information
             price: { $arrayElemAt: ["$price", 0] },
             seller: { $arrayElemAt: ["$seller.username", 0] },
           },
         },
-        { $sort: { firstName: 1 } },
+        { $sort: { FName: 1 } },
       ]).exec(),
       SsnDob.countDocuments(filters),
     ]);
@@ -256,7 +257,7 @@ const updateSellerProductStatus = async (req, res) => {
       { jabberId: sellerId },
       {
         productStatus: status,
-      }
+      },
     );
 
     await SsnDob.updateMany(
@@ -264,7 +265,7 @@ const updateSellerProductStatus = async (req, res) => {
         sellerId: sellerId,
         status: { $in: ["Available", "Suspended"] },
       },
-      { $set: { status: status } }
+      { $set: { status: status } },
     );
 
     res.status(200).json({
@@ -331,7 +332,7 @@ const checkOutSSNByNumber = async (req, res) => {
       (query) =>
         filters.dob || filters.dobMax
           ? { ...query, dob: buildDateFilter(filters) }
-          : query
+          : query,
     );
 
     const query = buildQuery(filters);
@@ -367,7 +368,7 @@ const checkOutSSNByNumber = async (req, res) => {
     await user.deductBalance(totalCost);
     await SsnDob.updateMany(
       { _id: { $in: ssn.map((item) => item._id) } },
-      { $set: { status: "Sold", buyerId: user._id, purchaseDate: new Date() } }
+      { $set: { status: "Sold", buyerId: user._id, purchaseDate: new Date() } },
     );
 
     // 1. Group totals by sellerId
@@ -388,7 +389,7 @@ const checkOutSSNByNumber = async (req, res) => {
       await User.findByIdAndUpdate(
         sellerId,
         { $inc: { balance: total } },
-        { new: true }
+        { new: true },
       );
     }
 
@@ -397,29 +398,25 @@ const checkOutSSNByNumber = async (req, res) => {
     const transformedData = ssn
       .map((item) => ({
         base: item.price.base,
-        firstName: item.firstName,
-        lastName: item.lastName,
-        country: item.country,
-        email: item.email,
-        emailPass: item.emailPass,
-        faUname: item.faUname,
-        faPass: item.faPass,
-        backupCode: item.backupCode,
-        securityQa: item.securityQa,
-        state: item.state,
-        gender: item.gender,
-        zip: item.zip,
-        address: item.address,
-        ssn: item.ssn,
-        city: item.city,
-        dateOfBirth: item.dob,
-        description: item.description || "N/A",
-        price: item.price.amount,
+        FName: item.FName,
+        LName: item.LName,
+        DOB: item.DOB,
+        SSN: item.SSN,
+        Address: item.Address,
+        City: item.City,
+        State: item.State || "N/A",
+        Zip: item.Zip || "N/A",
+        Email: item.Email,
+        Username: item.Username,
+        Password: item.Password,
+        BackupCode: item.BackupCode,
+        Description: item.Description || "N/A",
+        EnrollmentDetails: item.EnrollmentDetails || "N/A",
+        EnrollmentStatus: item.EnrollmentStatus || "N/A",
+        price: item.price.price,
         purchaseDate: new Date(),
-        enrollment: item.enrollment || "N/A",
-        fStatus: item.fStatus || "N/A",
       }))
-      .sort((a, b) => a.lastName.localeCompare(b.lastName));
+      .sort((a, b) => a.LName.localeCompare(b.LName));
 
     // Metadata section
     const metadata = {
@@ -503,12 +500,12 @@ const checkOutSSNByNumber = async (req, res) => {
       totalCost,
       "debit",
       `${process.env.API_DOMAIN}/uploads/${filename}`,
-      user.balance
+      user.balance,
     ).catch((err) => console.error("Error logging balance change:", err));
 
     await Cart.updateMany(
       { items: { $in: ssn } }, // Filter: Find any cart containing these items
-      { $pull: { items: { $in: ssn } } } // Action: Remove these items
+      { $pull: { items: { $in: ssn } } }, // Action: Remove these items
     );
 
     res.json({

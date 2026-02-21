@@ -1,0 +1,3 @@
+FName,LName,DOB,SSN,Address,City,Email,Username,Password,BackupCode,Status,State,Zip,Description,EnrollmentDetails,EnrollmentStatus
+John,Doe,1985-06-15,123-45-6789,742 Evergreen Terrace,Springfield,john.doe@gmail.com,johndoe85,P@ssw0rd!1,BACKUP-001,Available,Illinois,62701,Full profile with all details,Enrolled in Plan A,Graduated
+Jane,Smith,1990-03-22,987-65-4321,1600 Pennsylvania Ave NW,Washington,jane.smith@yahoo.com,janesmith90,Secur3Pass#2,BACKUP-002,Available,DC,20500,Standard profile,Enrolled in Plan B,Graduated
