@@ -1,7 +1,7 @@
 const BasePrice = require("../models/BasePrice");
 
 const createBase = async (req, res) => {
-  const { base, price, showDescription=false } = req.body;
+  const { base, price, showDescription=false, resellerPrice=2 } = req.body;
 
   if (!base || !price)
     return res.status(400).json({ message: "All fields are required" });
@@ -18,7 +18,12 @@ const createBase = async (req, res) => {
       return res.status(409).json({ message: "The ssn base already exists!" });
     }
 
-    const basePrice = await BasePrice.create(req.body);
+    const basePrice = await BasePrice.create({
+      base,
+      price,
+      showDescription,
+      resellerPrice,
+    });
     if (basePrice) {
       res.status(201).json({ message: `Base added successfully` });
     } else {
@@ -50,7 +55,7 @@ const getAllBases = async (req, res) => {
 
 const updateBase = async (req, res) => {
   const { baseId } = req.params;
-  const { base, price, showDescription=false } = req.body;
+  const { base, price, showDescription=false, resellerPrice=2 } = req.body;
 
   if (!baseId || !base || !price)
     return res.status(400).json({ message: "All fields are required" });
@@ -74,7 +79,7 @@ const updateBase = async (req, res) => {
     basePrice.base = base;
     basePrice.price = price;
     basePrice.showDescription = showDescription;
-
+    basePrice.resellerPrice = resellerPrice;
     
     const basep1 = await basePrice.save();
     res.status(200).json({ message: "Base update successfully" });

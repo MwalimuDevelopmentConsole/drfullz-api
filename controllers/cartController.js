@@ -157,6 +157,8 @@ const checkoutItems = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    const userAccountType = user.accountType || "buyer";
+
     // --- STEP 1: CONCURRENCY CHECK ---
     // Find how many of these specific IDs are actually still 'available'
     const availableDobs = await SsnDob.find({
@@ -172,8 +174,9 @@ const checkoutItems = async (req, res) => {
       });
     }
 
+    // calculate price based on account type, for reseller use resellerPrice
     const totalAmount = availableDobs.reduce((sum, dob) => {
-      return sum + (dob.price ? dob.price.price : 0);
+      return sum + (userAccountType === "reseller" ? dob.price.resellerPrice : dob.price.price);
     }, 0);
 
     const userBal = user.balance || 0;

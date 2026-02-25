@@ -240,47 +240,23 @@ const updateUser = asyncHandler(async (req, res) => {
     return res.status(response.statusCode).json(response);
   }
 
-  // Validate update data
-  const validation = validateUserData(req.body, true);
+  const {isActive, accountType} = req.body;
 
-  if (!validation.isValid) {
-    const response = formatResponse(
-      false,
-      null,
-      validation.errors.join(", "),
-      400
-    );
-    return res.status(response.statusCode).json(response);
+  if(isActive !== undefined) {
+    user.isActive = isActive;
   }
 
-  // Check if email is being changed and if it already exists
-  if (req.body.email && req.body.email !== user.email) {
-    const existingUser = await User.findOne({ email: req.body.email });
-    if (existingUser) {
-      const response = formatResponse(false, null, "Email already exists", 409);
-      return res.status(response.statusCode).json(response);
-    }
+  if(accountType) {
+    user.accountType = accountType;
   }
 
-  // Hash password if provided
-  if (req.body.password) {
-    req.body.password = await bcrypt.hash(req.body.password, 12);
-  }
-
-  // Update user
-  Object.assign(user, req.body);
   await user.save();
 
-  // Remove password from response
-  const userResponse = user.toObject();
-  delete userResponse.password;
+  res.status(200).json({
+    message: "User updated successfully",
+  });
 
-  const response = formatResponse(
-    true,
-    userResponse,
-    "User updated successfully"
-  );
-  res.status(response.statusCode).json(response);
+
 });
 
 // Delete user (soft delete)

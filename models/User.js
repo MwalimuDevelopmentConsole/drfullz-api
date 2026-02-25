@@ -22,6 +22,11 @@ const userSchema = new mongoose.Schema({
     enum: ["admin", "client", "seller", "buyer"],
     default: "client",
   },
+  accountType: {
+    type: String,
+    enum: ["buyer", "reseller"],
+    default: "buyer",
+  },
   balance: {
     type: Number,
     default: 0,

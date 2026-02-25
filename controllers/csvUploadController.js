@@ -55,7 +55,31 @@ const uploadSsn = async (req, res) => {
     // Process CSV file
     await new Promise((resolve, reject) => {
       fs.createReadStream(csvfile.path)
-        .pipe(csv())
+        .pipe(
+          csv({
+            mapHeaders: ({ header }) => {
+              const lowerHeader = header.toLowerCase().trim();
+              const targetFieldsMap = {
+                fname: "FName",
+                lname: "LName",
+                dob: "DOB",
+                ssn: "SSN",
+                address: "Address",
+                city: "City",
+                email: "Email",
+                username: "Username",
+                password: "Password",
+                backupcode: "BackupCode",
+                state: "State",
+                zip: "Zip",
+                description: "Description",
+                enrollmentdetails: "EnrollmentDetails",
+                enrollmentstatus: "EnrollmentStatus",
+              };
+              return targetFieldsMap[lowerHeader] || header.trim();
+            },
+          }),
+        )
         .on("data", (data) => {
           const missing = requiredFields.filter((field) => !data[field]);
           if (missing.length > 0) {

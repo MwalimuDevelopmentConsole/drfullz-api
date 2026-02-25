@@ -355,10 +355,11 @@ const checkOutSSNByNumber = async (req, res) => {
         .json({ message: "No SSNs found matching the criteria" });
     }
 
-    // Calculate total cost functionally
-    const totalCost = ssn.reduce((acc, item) => acc + item.price.price, 0);
+    const userAccountType = user.accountType || "buyer";
 
-    console.log(totalCost, user.balance);
+    // Calculate total cost functionally
+    const totalCost = ssn.reduce((acc, item) => acc + (userAccountType === "buyer" ? item.price.price : item.price.resellerPrice), 0);
+
 
     // Check balance and process transaction
     if (!user.hasSufficientBalance(totalCost)) {
