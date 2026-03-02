@@ -251,7 +251,7 @@ const getMyOrders = async (req, res) => {
   const {
     page = 1,
     limit = 1000,
-    cutoffDate = new Date(Date.now() - 72 * 60 * 60 * 1000),
+    cutoffDate = new Date(Date.now() - 120 * 60 * 60 * 1000),
   } = req.query;
 
   try {
