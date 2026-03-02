@@ -10,6 +10,10 @@ const baseSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    resellerPrice: {
+      type: Number,
+      default: 2,
+    },
     showDescription: {
       type: Boolean,
       default: false,
