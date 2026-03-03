@@ -10,6 +10,6 @@ router
     .get('/', basePriceController.getAllBases)
     .get('/one/:baseId', basePriceController.getBaseById)
     .patch('/:baseId', basePriceController.updateBase)
-
+    .delete('/:baseId', basePriceController.deleteBase)
 
 module.exports = router

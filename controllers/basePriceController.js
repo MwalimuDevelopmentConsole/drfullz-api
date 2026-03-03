@@ -1,7 +1,8 @@
 const BasePrice = require("../models/BasePrice");
+const SsnDob = require("../models/SsnDob");
 
 const createBase = async (req, res) => {
-  const { base, price, showDescription=false, resellerPrice=2 } = req.body;
+  const { base, price, showDescription = false, resellerPrice = 2 } = req.body;
 
   if (!base || !price)
     return res.status(400).json({ message: "All fields are required" });
@@ -55,7 +56,7 @@ const getAllBases = async (req, res) => {
 
 const updateBase = async (req, res) => {
   const { baseId } = req.params;
-  const { base, price, showDescription=false, resellerPrice=2 } = req.body;
+  const { base, price, showDescription = false, resellerPrice = 2 } = req.body;
 
   if (!baseId || !base || !price)
     return res.status(400).json({ message: "All fields are required" });
@@ -80,7 +81,7 @@ const updateBase = async (req, res) => {
     basePrice.price = price;
     basePrice.showDescription = showDescription;
     basePrice.resellerPrice = resellerPrice;
-    
+
     const basep1 = await basePrice.save();
     res.status(200).json({ message: "Base update successfully" });
   } catch (error) {
@@ -95,13 +96,39 @@ const getBaseById = async (req, res) => {
   if (!baseId) return res.status(400).json({ message: "base id is required" });
 
   try {
-    const base = await BasePrice.findById({_id: baseId}).lean().exec();
+    const base = await BasePrice.findById({ _id: baseId }).lean().exec();
     if (!base) {
       res.status(404).json({ message: `No base found` });
     } else {
-      res.status(200).json( base);
+      res.status(200).json(base);
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+};
+
+// delete base that is not used in any ssn
+const deleteBase = async (req, res) => {
+  const { baseId } = req.params;
+  try {
+    if (!baseId)
+      return res.status(400).json({ message: "Base id is required" });
+
+    const base = await BasePrice.findById({ _id: baseId }).lean().exec();
+    if (!base) {
+      return res.status(404).json({ message: "Base not found" });
     }
 
+    // check if base is used in any ssn
+    const ssn = await SsnDob.find({ price: baseId }).lean().exec();
+    if (ssn.length > 0) {
+      return res.status(400).json({ message: "Base is used in some records" });
+    }
+
+    await BasePrice.findByIdAndDelete({ _id: baseId }).exec();
+
+    res.status(200).json({ message: "Base deleted successfully" });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Something went wrong" });
@@ -112,5 +139,6 @@ module.exports = {
   createBase,
   getAllBases,
   updateBase,
-  getBaseById
+  getBaseById,
+  deleteBase,
 };
