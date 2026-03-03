@@ -130,10 +130,23 @@ const removeFromCart = async (req, res) => {
     res.status(500).json({ message: "Something went wrong." });
   }
 };
+// function to generate a batch number for a checkout
+function generateBatchNumber() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
+  return `BATCH-${year}${month}${day}${hours}${minutes}${seconds}`;
+}
 
 const checkoutItems = async (req, res) => {
   try {
     const userId = req.user.id;
+    //all order should have a batch number
+    const batchNumber = generateBatchNumber();
 
     const cart = await Cart.findOne({ user: userId });
 
@@ -143,7 +156,6 @@ const checkoutItems = async (req, res) => {
 
     const dobIds = cart.items;
 
-    console.log(dobIds);
 
     if (!dobIds || dobIds.length === 0) {
       return res
@@ -204,6 +216,7 @@ const checkoutItems = async (req, res) => {
           status: "Sold",
           buyerId: userId,
           purchaseDate: new Date(),
+          purchaseBatchNumber: batchNumber,
         },
       }
     );
@@ -272,7 +285,6 @@ const getMyOrders = async (req, res) => {
       ...dateFilter,
     };
 
-    console.log(query);
 
     const orders = await SsnDob.find(query)
       .skip((page - 1) * limit)
@@ -293,6 +305,30 @@ const getMyOrders = async (req, res) => {
     res.status(500).json({ message: "Failed to retrieve orders." });
   }
 };
+// get orders by buyerid for admin
+const getOrdersByBuyerId = async (req, res) => {
+  const buyerId = req.params.buyerId;
+  const { page = 1, limit = 1000 } = req.query;
+
+  try {
+    const orders = await SsnDob.find({ buyerId })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
+      .sort({ purchaseDate: -1 });
+
+    const totalOrders = await SsnDob.countDocuments({ buyerId });
+
+    res.json({
+      orders,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalOrders / limit),
+      totalOrders,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to retrieve orders." });
+  }
+};
 
 module.exports = {
   getCart,
@@ -300,4 +336,5 @@ module.exports = {
   removeFromCart,
   checkoutItems,
   getMyOrders,
+  getOrdersByBuyerId
 };

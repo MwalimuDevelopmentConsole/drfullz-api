@@ -47,6 +47,7 @@ const SsnSchema = new mongoose.Schema(
     isPaid: { type: String, default: "Not Paid" },
     productType: { type: String, default: "ssn" },
     purchaseDate: { type: Date, required: false },
+    purchaseBatchNumber: { type: String, required: false },
   },
   {
     timestamps: true,
