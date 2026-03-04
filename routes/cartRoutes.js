@@ -8,7 +8,7 @@ router.use(authenticateToken);
 router
     .get('/', cartController.getCart)
     .get('/orders', cartController.getMyOrders)
-    .get('/orders/:buyerId', cartController.getOrdersByBuyerId)
+    .get('/buyer-orders/:buyerId', cartController.getOrdersByBuyerId)
     .post('/add', cartController.addToCart)
     .post('/remove', cartController.removeFromCart)
     .post('/checkout', cartController.checkoutItems);
