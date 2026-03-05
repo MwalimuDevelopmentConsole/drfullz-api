@@ -1,6 +1,8 @@
 // controllers/userController.js
+const Payment = require("../models/Payment");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+const { logBalanceChange } = require("./userBalLogController");
 
 // Error handling wrapper
 const asyncHandler = (fn) => (req, res, next) => {
@@ -294,7 +296,7 @@ const deleteUser = asyncHandler(async (req, res) => {
 
 // Add balance to user
 const addBalance = asyncHandler(async (req, res) => {
-  const { amount, description } = req.body;
+  const { amount, description="Balance added by admin" } = req.body;
 
   if (!amount || amount <= 0) {
     const response = formatResponse(
@@ -339,8 +341,37 @@ const addBalance = asyncHandler(async (req, res) => {
     "Balance added successfully"
   );
 
+  const generateTransactionId = () => {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8);
+    return `TXN-${timestamp}-${random}`;
+  };
+
+  // generate a transaction id
+  const transactionId = generateTransactionId();
+
+  // create a payment record
+  const payment = new Payment({
+    userId: user._id,
+    priceAmount: parseFloat(amount),
+    payAmount: parseFloat(amount),
+    actuallyPaid: parseFloat(amount),
+    amountReceived: parseFloat(amount),
+    description: description,
+    transactionType: "admin_deposit",
+    status: "finished",
+    paymentId: transactionId,
+    adminUserId: req.user._id,
+    payAddress: "admin",
+    
+  });
+  await payment.save();
+
+  await logBalanceChange(user._id, parseFloat(amount), "credit", description, user.balance);
+
   res.status(response.statusCode).json(response);
 });
+
 
 // Get user statistics
 const getUserStatistics = asyncHandler(async (req, res) => {

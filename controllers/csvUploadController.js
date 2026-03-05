@@ -75,6 +75,7 @@ const uploadSsn = async (req, res) => {
                 description: "Description",
                 enrollmentdetails: "EnrollmentDetails",
                 enrollmentstatus: "EnrollmentStatus",
+                "2fa_secret": "2FA_Secret"
               };
               return targetFieldsMap[lowerHeader] || header.trim();
             },
@@ -124,6 +125,7 @@ const uploadSsn = async (req, res) => {
       EnrollmentStatus: result.EnrollmentStatus || null,
       isPaid: "Not Paid",
       productType: "ssn",
+      twoFA: result["2FA_Secret"] || null,
     }));
 
     // Insert data into MongoDB

@@ -176,6 +176,7 @@ const getAllSsns = asyncHandler(async (req, res) => {
             Address: { $cond: [{ $ifNull: ["$Address", false] }, true, false] },
             SSN: { $cond: [{ $ifNull: ["$SSN", false] }, true, false] },
             City: { $cond: [{ $ifNull: ["$City", false] }, true, false] },
+            twoFA: { $cond: [{ $ifNull: ["$twoFA", false] }, true, false] },
 
             // Price information
             price: { $arrayElemAt: ["$price", 0] },
@@ -414,6 +415,7 @@ const checkOutSSNByNumber = async (req, res) => {
         Description: item.Description || "N/A",
         EnrollmentDetails: item.EnrollmentDetails || "N/A",
         EnrollmentStatus: item.EnrollmentStatus || "N/A",
+        twoFA: item.twoFA || "N/A",
         price: item.price.price,
         purchaseDate: new Date(),
       }))
