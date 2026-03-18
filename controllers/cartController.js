@@ -132,14 +132,7 @@ const removeFromCart = async (req, res) => {
 };
 // function to generate a batch number for a checkout
 function generateBatchNumber() {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-  const seconds = date.getSeconds();
-  return `BATCH-${year}${month}${day}${hours}${minutes}${seconds}`;
+  return `BATCH-${Date.now()}`;
 }
 
 const checkoutItems = async (req, res) => {
