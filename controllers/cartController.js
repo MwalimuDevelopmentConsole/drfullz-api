@@ -181,8 +181,15 @@ const checkoutItems = async (req, res) => {
     // If the found available dobs are fewer than what the user tried to buy,
     // it means someone else bought one of them fractions of a second ago.
     if (availableDobs.length !== dobIds.length) {
+      // remove the unavailable dobs from the cart
+      const unavailableDobs = dobIds.filter((id) => !availableDobs.includes(id));
+      await Cart.findOneAndUpdate(
+        { user: userId },
+        { $pull: { items: { $in: unavailableDobs } } },
+        { new: true }
+      );
       return res.status(409).json({
-        message: "One or more items in your cart are no longer available.",
+        message: "One or more items in your cart are no longer available. They have been removed from your cart. Please try again.",
       });
     }
 

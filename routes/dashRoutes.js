@@ -5,6 +5,7 @@ const verifyJWT = require("../middleware/verifyJWT");
 
 // router.use(verifyJWT);
 
+router.get("/sales", dashController.getSalesData);
 router.get("/", dashController.getDashStats);
 
 module.exports = router;

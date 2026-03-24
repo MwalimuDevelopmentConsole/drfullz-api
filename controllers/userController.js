@@ -112,9 +112,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
   if (search) {
     filter.$or = [
       { email: { $regex: search, $options: "i" } },
-      { "profile.firstName": { $regex: search, $options: "i" } },
-      { "profile.lastName": { $regex: search, $options: "i" } },
-      { "profile.company": { $regex: search, $options: "i" } },
+      { username: { $regex: search, $options: "i" } },
     ];
   }
 
