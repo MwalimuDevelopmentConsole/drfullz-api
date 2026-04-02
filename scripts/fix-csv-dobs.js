@@ -1,7 +1,4 @@
 require('dotenv').config();
-const fs = require('fs');
-const path = require('path');
-const csv = require('csv-parser');
 const mongoose = require('mongoose');
 const connectDB = require('../config/dbConn');
 const SsnDob = require('../models/SsnDob');
@@ -9,116 +6,66 @@ const SsnDob = require('../models/SsnDob');
 // Connect to MongoDB
 connectDB();
 
-// Extract the birth year from a DOB string (supports MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD)
-const extractDobYear = (dateStr) => {
-  if (!dateStr) return null;
-  const str = String(dateStr).trim();
-  const parts = str.split(/[-/]/);
-  if (parts.length === 3) {
-    if (parts[0].length >= 4) return parseInt(parts[0], 10);
-    const y = parseInt(parts[2], 10);
-    return isNaN(y) ? null : y;
+// Convert a JS Date to MM/DD/YYYY using LOCAL date parts.
+// The stored Date.toString() string includes the timezone offset (GMT+0300),
+// so new Date(str) always restores the exact original local date — even though
+// the UTC timestamp is one day behind (midnight EAT = 21:00 UTC previous day).
+const toMMDDYYYY = (d) => {
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${mm}/${dd}/${yyyy}`;
+};
+
+// Fix records in DB whose DOB was stored in a malformed format:
+//   - BSON Date object    → ISODate('1994-03-17T21:00:00.000Z')  (most common)
+//   - JS Date.toString()  → "Fri Mar 18 1994 00:00:00 GMT+0300 (East Africa Time)"
+//   - ISO 8601 string     → "1990-03-22T00:00:00.000Z"
+const fixMalformedDbDobs = async () => {
+  console.log('\nScanning DB for malformed DOB values...');
+
+  const records = await SsnDob.find({
+    $or: [
+      // Still stored as a native BSON Date type
+      { DOB: { $type: 'date' } },
+      // JS Date.toString() format: starts with "Fri Mar 18 1994..."
+      { DOB: { $regex: /^\w{3}\s+\w{3}\s+\d{1,2}\s+\d{4}/, $options: '' } },
+      // ISO 8601 string format: starts with "1990-03-22T"
+      { DOB: { $regex: /^\d{4}-\d{2}-\d{2}T/, $options: '' } },
+    ]
+  }).lean();
+
+  console.log(`  Found ${records.length} malformed DOB record(s).`);
+
+  let fixed = 0;
+  for (const record of records) {
+    const d = new Date(record.DOB);
+    if (isNaN(d.getTime())) {
+      console.warn(`  ⚠ Could not parse DOB for SSN=${record.SSN}: "${record.DOB}"`);
+      continue;
+    }
+    const dobStr = toMMDDYYYY(d);
+    const dobYear = d.getFullYear();
+    // Preserve the original value as a string (record.DOB may be a Date object or a string)
+    const oldDate = record.DOB instanceof Date
+      ? record.DOB.toISOString()
+      : String(record.DOB);
+    await SsnDob.updateOne(
+      { _id: record._id },
+      { $set: { DOB: dobStr, dobYear, oldDate } }
+    );
+    fixed++;
+    console.log(`  → Fixed SSN=${record.SSN} | "${record.DOB}" → "${dobStr}" | dobYear: ${dobYear}`);
   }
-  return null;
-};
 
-// Case-insensitive field getter for CSV rows
-const getField = (row, fieldName) => {
-  const key = Object.keys(row).find(
-    (k) => k.toLowerCase().trim() === fieldName.toLowerCase()
-  );
-  return key ? row[key] : undefined;
-};
-
-const processCsvFile = (filePath) => {
-  return new Promise((resolve, reject) => {
-    const results = [];
-    fs.createReadStream(filePath)
-      .pipe(
-        csv({
-          mapHeaders: ({ header }) => {
-            const lowerHeader = header.toLowerCase().trim();
-            const targetFieldsMap = {
-              dob: "DOB",
-              ssn: "SSN",
-            };
-            return targetFieldsMap[lowerHeader] || header.trim();
-          },
-        })
-      )
-      .on('data', (data) => {
-        if (data.SSN && data.DOB) {
-          results.push(data);
-        }
-      })
-      .on('end', () => resolve(results))
-      .on('error', reject);
-  });
+  console.log(`\nDone. Fixed ${fixed} malformed DOB record(s).`);
 };
 
 const runFix = async () => {
   try {
-    const uploadsDir = path.join(__dirname, '..', 'uploads');
-
-    // Support basic deeply nested file search in uploads and uploads/csv-documents
-    const allFiles = [];
-    const dirs = [uploadsDir, path.join(uploadsDir, 'csv-documents')];
-
-    for (const d of dirs) {
-      if (fs.existsSync(d)) {
-        const files = fs.readdirSync(d);
-        for (const file of files) {
-          if (file.toLowerCase().endsWith('.csv')) {
-            allFiles.push(path.join(d, file));
-          }
-        }
-      }
-    }
-
-    console.log(`Found ${allFiles.length} CSV file(s) to process.`);
-
-    let totalUpdated = 0;
-
-    for (const filePath of allFiles) {
-      console.log(`Processing file: ${path.basename(filePath)}`);
-      try {
-        const rows = await processCsvFile(filePath);
-
-        let fileUpdates = 0;
-        for (const row of rows) {
-          const ssn = (getField(row, 'ssn') || '').trim();
-          const csvDobString = (getField(row, 'dob') || '').trim();
-
-          if (!ssn || !csvDobString) continue;
-
-          console.log(ssn, csvDobString);
-
-          // Find the SsnDob record
-          const record = await SsnDob.findOne({ SSN: ssn });
-          if (record) {
-            const dobStr = csvDobString;
-            const dobYear = extractDobYear(csvDobString);
-
-            await SsnDob.updateOne(
-              { _id: record._id },
-              { $set: { DOB: dobStr, dobYear } }
-            );
-            fileUpdates++;
-            console.log(`  → Updated SSN=${record.SSN} | DOB: "${dobStr}" | dobYear: ${dobYear}`);
-          } else {
-            console.warn(`  ⚠ SSN not found in DB: ${ssn}`);
-          }
-        }
-        console.log(`  Updated ${fileUpdates} records from ${path.basename(filePath)}.`);
-        totalUpdated += fileUpdates;
-      } catch (err) {
-        console.error(`  Error processing ${path.basename(filePath)}:`, err.message);
-      }
-    }
-
-    console.log(`\nFinished! Total records updated: ${totalUpdated}`);
+    await fixMalformedDbDobs();
   } catch (err) {
-    console.error("General error:", err);
+    console.error('General error:', err);
   } finally {
     mongoose.connection.close();
     console.log('MongoDB connection closed.');
@@ -131,5 +78,5 @@ mongoose.connection.once('open', () => {
 });
 
 mongoose.connection.on('error', (err) => {
-  console.error("MongoDB Connection Error: ", err);
+  console.error('MongoDB Connection Error: ', err);
 });

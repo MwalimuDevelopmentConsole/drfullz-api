@@ -37,6 +37,7 @@ const SsnSchema = new mongoose.Schema(
     Zip: { type: String, required: false },
     DOB: { type: String, required: true },
     dobYear: { type: Number, required: false },
+    oldDate: { type: String, required: false },
     Address: { type: String, required: true },
     description: { type: String, required: false },
     SSN: { type: String, required: true },
