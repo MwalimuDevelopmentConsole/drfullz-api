@@ -104,9 +104,10 @@ const runFix = async () => {
               { $set: { DOB: dobStr, dobYear } }
             );
             fileUpdates++;
-          }
-
             console.log(`  → Updated SSN=${record.SSN} | DOB: "${dobStr}" | dobYear: ${dobYear}`);
+          } else {
+            console.warn(`  ⚠ SSN not found in DB: ${ssn}`);
+          }
         }
         console.log(`  Updated ${fileUpdates} records from ${path.basename(filePath)}.`);
         totalUpdated += fileUpdates;
