@@ -9,55 +9,25 @@ const SsnDob = require('../models/SsnDob');
 // Connect to MongoDB
 connectDB();
 
-const parseDOBStr = (dateStr) => {
-  if (!dateStr) return new Date();
-  
+// Extract the birth year from a DOB string (supports MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD)
+const extractDobYear = (dateStr) => {
+  if (!dateStr) return null;
   const str = String(dateStr).trim();
   const parts = str.split(/[-/]/);
-  
-  let newDate;
-  let expectedDay = null;
-
   if (parts.length === 3) {
-    let year, month, day;
-    // Format YYYY-MM-DD
-    if (parts[0].length >= 4) {
-      year = parseInt(parts[0], 10);
-      month = parseInt(parts[1], 10) - 1;
-      day = parseInt(parts[2], 10);
-    } else {
-      // Format MM/DD/YYYY or DD/MM/YYYY
-      month = parseInt(parts[0], 10) - 1;
-      day = parseInt(parts[1], 10);
-      year = parseInt(parts[2], 10);
-      if (month >= 12 && day <= 12) {
-         let temp = month + 1;
-         month = day - 1;
-         day = temp;
-      }
-    }
-    expectedDay = day;
-    newDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
-  } else {
-    const d = new Date(str);
-    if (!isNaN(d.getTime())) {
-      if (str.toUpperCase().includes("T") || str.toUpperCase().includes("Z")) {
-        expectedDay = d.getUTCDate();
-        newDate = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12, 0, 0));
-      } else {
-        expectedDay = d.getDate();
-        newDate = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0));
-      }
-    } else {
-      newDate = new Date();
-    }
+    if (parts[0].length >= 4) return parseInt(parts[0], 10);
+    const y = parseInt(parts[2], 10);
+    return isNaN(y) ? null : y;
   }
+  return null;
+};
 
-  if (expectedDay !== null && newDate.getUTCDate() !== expectedDay) {
-    throw new Error(`Invalid date encountered: parsing "${str}" shifted the day or the date is invalid (Expected day ${expectedDay}, parsed as ${newDate.getUTCDate()}).`);
-  }
-
-  return newDate;
+// Case-insensitive field getter for CSV rows
+const getField = (row, fieldName) => {
+  const key = Object.keys(row).find(
+    (k) => k.toLowerCase().trim() === fieldName.toLowerCase()
+  );
+  return key ? row[key] : undefined;
 };
 
 const processCsvFile = (filePath) => {
@@ -89,11 +59,11 @@ const processCsvFile = (filePath) => {
 const runFix = async () => {
   try {
     const uploadsDir = path.join(__dirname, '..', 'uploads');
-    
+
     // Support basic deeply nested file search in uploads and uploads/csv-documents
     const allFiles = [];
     const dirs = [uploadsDir, path.join(uploadsDir, 'csv-documents')];
-    
+
     for (const d of dirs) {
       if (fs.existsSync(d)) {
         const files = fs.readdirSync(d);
@@ -106,32 +76,35 @@ const runFix = async () => {
     }
 
     console.log(`Found ${allFiles.length} CSV file(s) to process.`);
-    
+
     let totalUpdated = 0;
-    
+
     for (const filePath of allFiles) {
       console.log(`Processing file: ${path.basename(filePath)}`);
       try {
         const rows = await processCsvFile(filePath);
-        
+
         let fileUpdates = 0;
         for (const row of rows) {
-          const ssn = row.SSN.trim();
-          const csvDobString = row.DOB.trim();
-          
+          const ssn = (getField(row, 'ssn') || '').trim();
+          const csvDobString = (getField(row, 'dob') || '').trim();
+
           if (!ssn || !csvDobString) continue;
 
           // Find the SsnDob record
           const record = await SsnDob.findOne({ SSN: ssn });
           if (record) {
-            const newDOB = parseDOBStr(csvDobString);
-            
-            // Format check simply outputs to terminal for logs
-            if (record.DOB && record.DOB.getTime() !== newDOB.getTime()) {
-              await SsnDob.updateOne({ _id: record._id }, { $set: { DOB: newDOB } });
-              fileUpdates++;
-            }
+            const dobStr = csvDobString;
+            const dobYear = extractDobYear(csvDobString);
+
+            await SsnDob.updateOne(
+              { _id: record._id },
+              { $set: { DOB: dobStr, dobYear } }
+            );
+            fileUpdates++;
           }
+
+          console.log(record.DOB, record.dobYear, record.SSN);
         }
         console.log(`  Updated ${fileUpdates} records from ${path.basename(filePath)}.`);
         totalUpdated += fileUpdates;
@@ -139,7 +112,7 @@ const runFix = async () => {
         console.error(`  Error processing ${path.basename(filePath)}:`, err.message);
       }
     }
-    
+
     console.log(`\nFinished! Total records updated: ${totalUpdated}`);
   } catch (err) {
     console.error("General error:", err);

@@ -138,8 +138,8 @@ const getAllSsns = asyncHandler(async (req, res) => {
     state,
     city,
     zip,
-    dob,
-    dobMax,
+    dob=1800,
+    dobMax=2098,
     name,
     isBot = "no",
     enrollmentStatus,
@@ -157,11 +157,13 @@ const getAllSsns = asyncHandler(async (req, res) => {
   if (enrollmentStatus)
     filters.EnrollmentStatus = { $regex: enrollmentStatus, $options: "i" };
 
-  // Handle date range if provided
+  // Handle year range filter using dobYear (Number)
   if (dob && dobMax) {
-    const startDate = new Date(`${dob}-01-01`);
-    const endDate = new Date(`${dobMax}-12-31`);
-    filters.DOB = { $gte: startDate, $lte: endDate };
+    filters.dobYear = { $gte: parseInt(dob), $lte: parseInt(dobMax) };
+  } else if (dob) {
+    filters.dobYear = { $gte: parseInt(dob) };
+  } else if (dobMax) {
+    filters.dobYear = { $lte: parseInt(dobMax) };
   }
 
   try {
@@ -201,7 +203,7 @@ const getAllSsns = asyncHandler(async (req, res) => {
           $project: {
             // Plain fields shown to buyer
             FName: 1,
-            dobYear: { $year: "$DOB" },
+            dobYear: 1,
             State: 1,
             Zip: 1,
             Description: 1,

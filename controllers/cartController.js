@@ -287,7 +287,7 @@ const getMyOrders = async (req, res) => {
 
     const query = {
       buyerId: userId,
-      ...dateFilter,
+      // ...dateFilter,
     };
 
     const orders = await SsnDob.find(query)
