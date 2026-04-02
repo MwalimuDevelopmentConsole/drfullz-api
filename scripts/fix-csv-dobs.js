@@ -91,6 +91,8 @@ const runFix = async () => {
 
           if (!ssn || !csvDobString) continue;
 
+          console.log(ssn, csvDobString);
+
           // Find the SsnDob record
           const record = await SsnDob.findOne({ SSN: ssn });
           if (record) {
