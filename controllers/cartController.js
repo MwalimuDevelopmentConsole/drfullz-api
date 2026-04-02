@@ -271,27 +271,24 @@ const checkoutItems = async (req, res) => {
 
 const getMyOrders = async (req, res) => {
   const userId = req.user._id;
-  const {
-    page = 1,
-    limit = 1000,
-    cutoffDate = new Date(Date.now() - 120 * 60 * 60 * 1000),
-  } = req.query;
+  const { page = 1, limit = 1000 } = req.query;
 
   try {
-    // Use provided cutoff or calculate 72 hours ago
-    let dateFilter = {};
-    if (cutoffDate) {
-      dateFilter = { purchaseDate: { $gte: new Date(cutoffDate) } };
-    } else {
-      const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000);
-      dateFilter = { purchaseDate: { $gte: seventyTwoHoursAgo } };
+    const now = new Date();
+    let cutoffHours = 120; // Default cutoff
+
+    // Allow orders that are 3 weeks older just from April 1 to April 7
+    if (now.getMonth() === 3 && now.getDate() >= 1 && now.getDate() <= 7) {
+      cutoffHours = 21 * 24; // 3 weeks
     }
+
+    const calculatedCutoffDate = new Date(Date.now() - cutoffHours * 60 * 60 * 1000);
+    const dateFilter = { purchaseDate: { $gte: calculatedCutoffDate } };
 
     const query = {
       buyerId: userId,
       ...dateFilter,
     };
-
 
     const orders = await SsnDob.find(query)
       .skip((page - 1) * limit)
@@ -305,7 +302,7 @@ const getMyOrders = async (req, res) => {
       currentPage: parseInt(page),
       totalPages: Math.ceil(totalOrders / limit),
       totalOrders,
-      cutoffDate, // Optional: return the cutoff date used
+      cutoffDate: calculatedCutoffDate,
     });
   } catch (error) {
     console.error(error);
