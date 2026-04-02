@@ -5,6 +5,55 @@ const { default: mongoose } = require("mongoose");
 const User = require("../models/User");
 const BasePrice = require("../models/BasePrice");
 
+const parseDOBStr = (dateStr) => {
+  if (!dateStr) return new Date();
+  
+  const str = String(dateStr).trim();
+  const parts = str.split(/[-/]/);
+  
+  let newDate;
+  let expectedDay = null;
+
+  if (parts.length === 3) {
+    let year, month, day;
+    if (parts[0].length >= 4) {
+      year = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1;
+      day = parseInt(parts[2], 10);
+    } else {
+      month = parseInt(parts[0], 10) - 1;
+      day = parseInt(parts[1], 10);
+      year = parseInt(parts[2], 10);
+      if (month >= 12 && day <= 12) {
+         let temp = month + 1;
+         month = day - 1;
+         day = temp;
+      }
+    }
+    expectedDay = day;
+    newDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
+  } else {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      if (str.toUpperCase().includes("T") || str.toUpperCase().includes("Z")) {
+        expectedDay = d.getUTCDate();
+        newDate = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12, 0, 0));
+      } else {
+        expectedDay = d.getDate();
+        newDate = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0));
+      }
+    } else {
+      newDate = new Date();
+    }
+  }
+
+  if (expectedDay !== null && newDate.getUTCDate() !== expectedDay) {
+    throw new Error(`Invalid date encountered: parsing "${str}" shifted the day or the date is invalid (Expected day ${expectedDay}, parsed as ${newDate.getUTCDate()}).`);
+  }
+
+  return newDate;
+};
+
 const uploadSsn = async (req, res) => {
   try {
     // Validate file existence
@@ -108,7 +157,7 @@ const uploadSsn = async (req, res) => {
       price: new mongoose.Types.ObjectId(price),
       FName: result.FName,
       LName: result.LName,
-      DOB: new Date(result.DOB),
+      DOB: parseDOBStr(result.DOB),
       SSN: result.SSN,
       Address: result.Address,
       City: result.City,
