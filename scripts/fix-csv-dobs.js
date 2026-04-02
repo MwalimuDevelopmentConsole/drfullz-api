@@ -106,7 +106,7 @@ const runFix = async () => {
             fileUpdates++;
           }
 
-          console.log(record.DOB, record.dobYear, record.SSN);
+            console.log(`  → Updated SSN=${record.SSN} | DOB: "${dobStr}" | dobYear: ${dobYear}`);
         }
         console.log(`  Updated ${fileUpdates} records from ${path.basename(filePath)}.`);
         totalUpdated += fileUpdates;
