@@ -143,6 +143,7 @@ const getAllSsns = asyncHandler(async (req, res) => {
     name,
     isBot = "no",
     enrollmentStatus,
+    level
   } = req.query;
 
   // Build filter object
@@ -164,6 +165,10 @@ const getAllSsns = asyncHandler(async (req, res) => {
     filters.dobYear = { $gte: parseInt(dob) };
   } else if (dobMax) {
     filters.dobYear = { $lte: parseInt(dobMax) };
+  }
+
+  if(level){
+    filters.level = level;
   }
 
   try {

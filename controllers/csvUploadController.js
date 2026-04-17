@@ -89,6 +89,8 @@ const uploadSsn = async (req, res) => {
                 zip: "Zip",
                 description: "Description",
                 enrollmentdetails: "EnrollmentDetails",
+                level: "Level",
+                programs: "Programs",
                 enrollmentstatus: "EnrollmentStatus",
                 "2fa_secret": "2FA_Secret"
               };
@@ -142,6 +144,8 @@ const uploadSsn = async (req, res) => {
       isPaid: "Not Paid",
       productType: "ssn",
       twoFA: result["2FA_Secret"] || null,
+      level: result.Level === "University Dropout" ? "University Withdrawn" : result.Level === "College Dropout" ? "College Withdrawn" : result.Level || null,
+      programs: result.Programs || null,
     }));
 
     // Insert data into MongoDB
