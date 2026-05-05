@@ -271,7 +271,7 @@ const checkoutItems = async (req, res) => {
 
 const getMyOrders = async (req, res) => {
   const userId = req.user._id;
-  const { page = 1, limit = 1000 } = req.query;
+  const { page = 1, limit = 4000 } = req.query;
 
   try {
     const now = new Date();
