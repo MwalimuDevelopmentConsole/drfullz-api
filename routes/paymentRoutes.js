@@ -59,4 +59,7 @@ router.post('/admin/add-balance', authenticateToken, isAdmin, paymentController.
 // Deduct balance manually (admin only)
 router.post('/admin/deduct-balance', authenticateToken, isAdmin, paymentController.deductBalance);
 
+// Confirm partial payment (admin only)
+router.post('/admin/confirm-partial', authenticateToken, isAdmin, paymentController.confirmPartialPayment);
+
 module.exports = router;

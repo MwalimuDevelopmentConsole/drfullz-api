@@ -329,6 +329,66 @@ const deductBalance = asyncHandler(async (req, res) => {
   res.status(response.statusCode).json(response);
 });
 
+// Admin: Confirm partial payment
+const confirmPartialPayment = asyncHandler(async (req, res) => {
+  const { transactionId } = req.body;
+  const adminUserId = req.user.id;
+
+  if (!transactionId) {
+    const response = formatResponse(false, null, "Transaction ID is required", 400);
+    return res.status(response.statusCode).json(response);
+  }
+
+  const transaction = await Transaction.findById(transactionId);
+  if (!transaction) {
+    const response = formatResponse(false, null, "Transaction not found", 404);
+    return res.status(response.statusCode).json(response);
+  }
+
+  if (transaction.status !== "partially_paid") {
+    const response = formatResponse(false, null, "Transaction is not partially paid", 400);
+    return res.status(response.statusCode).json(response);
+  }
+
+  const user = await User.findById(transaction.userId);
+  if (!user) {
+    const response = formatResponse(false, null, "User associated with transaction not found", 404);
+    return res.status(response.statusCode).json(response);
+  }
+
+  const partialAmount = parseFloat(transaction.actuallyPaid || transaction.amountReceived || 0);
+
+  if (partialAmount <= 0) {
+    const response = formatResponse(false, null, "Partial amount is 0, cannot confirm", 400);
+    return res.status(response.statusCode).json(response);
+  }
+
+  // Update transaction
+  transaction.status = "finished";
+  transaction.finishedAt = new Date();
+  transaction.adminNote = (transaction.adminNote ? transaction.adminNote + " | " : "") + "Admin confirmed partial payment";
+  await transaction.save();
+
+  // Update user balance
+  user.balance += partialAmount;
+  await user.save();
+
+  logBalanceChange(
+    user._id,
+    partialAmount,
+    "credit",
+    `Partial payment confirmed by admin, Transaction ID: ${transactionId}`,
+    user.balance
+  ).catch((err) => console.error("Error logging balance change:", err));
+
+  const response = formatResponse(
+    true,
+    { transaction, newBalance: user.balance },
+    "Partial payment confirmed successfully"
+  );
+  res.status(response.statusCode).json(response);
+});
+
 // System: Deduct balance for Forest Lookup API
 const deductBalanceForLookup = async (
   userId,
@@ -773,6 +833,7 @@ module.exports = {
   getTransaction,
   addBalance,
   deductBalance,
+  confirmPartialPayment,
   deductBalanceForLookup,
   getAllTransactions,
 
