@@ -371,7 +371,7 @@ const verifyToken = asyncHandler(async (req, res) => {
 
 // Change password with current password verification
 const changePassword = asyncHandler(async (req, res) => {
-  const { password } = req.body;
+  const { password, userId } = req.body;
 
   if (!password) {
     const response = formatResponse(false, null, "Password is required", 400);
@@ -388,7 +388,17 @@ const changePassword = asyncHandler(async (req, res) => {
     return res.status(response.statusCode).json(response);
   }
 
-  const user = await User.findById(req.user._id);
+  let targetUserId = req.user._id;
+
+  if (userId && userId !== req.user._id.toString()) {
+    if (req.user.role !== 'admin') {
+      const response = formatResponse(false, null, "Not authorized to change other user's password", 403);
+      return res.status(response.statusCode).json(response);
+    }
+    targetUserId = userId;
+  }
+
+  const user = await User.findById(targetUserId);
 
   if (!user) {
     const response = formatResponse(false, null, "User not found", 404);
