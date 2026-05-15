@@ -359,7 +359,9 @@ const confirmPartialPayment = asyncHandler(async (req, res) => {
   const partialAmount = parseFloat(transaction.actuallyPaid || transaction.amountReceived || 0);
 
   if (partialAmount <= 0) {
-    const response = formatResponse(false, null, "Partial amount is 0, cannot confirm", 400);
+    transaction.status = "failed";
+    await transaction.save();
+    const response = formatResponse(false, null, "Partial amount is 0, marked as failed", 200);
     return res.status(response.statusCode).json(response);
   }
 
