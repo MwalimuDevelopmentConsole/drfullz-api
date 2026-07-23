@@ -75,7 +75,7 @@ const transactionSchema = new mongoose.Schema({
   // Transaction type
   transactionType: {
     type: String,
-    enum: ['crypto_payment', 'admin_deposit', 'admin_deduction', 'system_deduction'],
+    enum: ['crypto_payment', 'admin_deposit', 'support_deposit', 'admin_deduction', 'system_deduction'],
     default: 'crypto_payment'
   },
   

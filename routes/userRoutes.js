@@ -9,6 +9,7 @@ const userController = require('../controllers/userController');
 const { 
   authenticateToken, 
   isAdmin, 
+  isStaff,
   isClient, 
   isAuthenticated
 } = require('../middleware/auth');
@@ -16,9 +17,9 @@ const {
 // ================================
 // ADMIN USER MANAGEMENT ROUTES
 // ================================
-router.get('/', authenticateToken, isAdmin, userController.getAllUsers);
+router.get('/', authenticateToken, isStaff, userController.getAllUsers);
 router.get('/admin/users/statistics', authenticateToken, isAdmin, userController.getUserStatistics);
-router.get('/:id', authenticateToken, isAdmin, userController.getUserById);
+router.get('/:id', authenticateToken, isStaff, userController.getUserById);
 router.post('/admin/users', authenticateToken, isAdmin, userController.createUser);
 router.post('/bot-user', userController.createBotUser);
 router.patch('/:id', authenticateToken, isAdmin, userController.updateUser);

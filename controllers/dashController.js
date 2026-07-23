@@ -1,10 +1,12 @@
 const SsnDob = require("../models/SsnDob");
 const User = require("../models/User");
+const Payment = require("../models/Payment");
+const DepositRequest = require("../models/DepositRequest");
 const moment = require("moment-timezone");
 
 const getDashStats = async (req, res) => {
   try {
-    const [totalBalanceResult, topClients, result] = await Promise.all([
+    const [totalBalanceResult, topClients, result, unresolvedDepositsCount] = await Promise.all([
       User.aggregate([
         { $match: { role: "client", isActive: true } },
         {
@@ -66,9 +68,10 @@ const getDashStats = async (req, res) => {
           },
         },
       ]),
+      DepositRequest.countDocuments({ status: "pending" }),
     ]);
 
-    res.status(200).json({ totalBalanceResult, topClients, result });
+    res.status(200).json({ totalBalanceResult, topClients, result, unresolvedDepositsCount });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Something went wrong" });

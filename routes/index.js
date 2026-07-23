@@ -11,6 +11,7 @@ const baseRoutes = require("./baseRoutes");
 const ssnRoutes = require("./ssnRoutes");
 const dashRoutes = require("./dashRoutes");
 const cartRoutes = require("./cartRoutes");
+const depositRequestRoutes = require("./depositRequestRoutes");
 
 // Health check endpoint
 router.get("/health", (req, res) => {
@@ -31,6 +32,7 @@ router.use("/base", baseRoutes);
 router.use("/ssn", ssnRoutes);
 router.use("/dash", dashRoutes);
 router.use("/cart", cartRoutes);
+router.use("/deposit-requests", depositRequestRoutes);
 
 // 404 handler for API routes
 router.use("*", (req, res) => {

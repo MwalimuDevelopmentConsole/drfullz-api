@@ -346,7 +346,10 @@ const confirmPartialPayment = asyncHandler(async (req, res) => {
   }
 
   if (transaction.status !== "partially_paid") {
-    const response = formatResponse(false, null, "Transaction is not partially paid", 400);
+    const message = (transaction.isPartialPayment && transaction.status === "finished")
+      ? "Partial payment was already confirmed by the system"
+      : "Transaction is not partially paid";
+    const response = formatResponse(false, null, message, 400);
     return res.status(response.statusCode).json(response);
   }
 
@@ -705,12 +708,33 @@ const handleNowPaymentsWebhook = asyncHandler(async (req, res) => {
 
       case "partially_paid":
         // Payment was partially paid
-        transaction.amountReceived = parseFloat(actually_paid || 0);
+        const partialAmountToAdd = parseFloat(actually_paid || 0);
+        transaction.amountReceived = partialAmountToAdd;
         transaction.isPartialPayment = true;
 
-        console.log(
-          `Partial payment received: ${actually_paid}/${price_amount} for transaction ${transactionId}`
-        );
+        if (partialAmountToAdd > 0) {
+          user.balance += partialAmountToAdd;
+          await user.save();
+
+          transaction.status = "finished";
+          transaction.finishedAt = new Date();
+
+          logBalanceChange(
+            user._id,
+            partialAmountToAdd,
+            "credit",
+            `Deposit via NOWPayments (Partial), Transaction ID: ${transactionId}`,
+            user.balance
+          ).catch((err) => console.error("Error logging balance change:", err));
+
+          console.log(
+            `Partial payment completed: ${partialAmountToAdd} added to user ${transaction.userId} for transaction ${transactionId}`
+          );
+        } else {
+          console.log(
+            `Partial payment received: ${actually_paid}/${price_amount} for transaction ${transactionId}`
+          );
+        }
         break;
 
       case "finished":
@@ -829,6 +853,67 @@ const getPaymentStatus = asyncHandler(async (req, res) => {
   res.status(response.statusCode).json(response);
 });
 
+// Confirm support deposit request
+const confirmSupportDeposit = asyncHandler(async (req, res) => {
+  const { transactionId } = req.body;
+
+  if (!transactionId) {
+    const response = formatResponse(false, null, "Transaction ID is required", 400);
+    return res.status(response.statusCode).json(response);
+  }
+
+  const transaction = await Transaction.findById(transactionId);
+
+  if (!transaction) {
+    const response = formatResponse(false, null, "Transaction not found", 404);
+    return res.status(response.statusCode).json(response);
+  }
+
+  if (transaction.transactionType !== "support_deposit" || transaction.status !== "waiting") {
+    const response = formatResponse(false, null, "Invalid transaction type or status", 400);
+    return res.status(response.statusCode).json(response);
+  }
+
+  const user = await User.findById(transaction.userId);
+  
+  if (!user) {
+    const response = formatResponse(false, null, "User not found", 404);
+    return res.status(response.statusCode).json(response);
+  }
+
+  // Update user balance
+  user.balance += transaction.priceAmount;
+  await user.save();
+
+  // Update transaction status
+  transaction.status = "finished";
+  transaction.actuallyPaid = transaction.priceAmount;
+  transaction.amountReceived = transaction.priceAmount;
+  transaction.adminUserId = req.user._id;
+  transaction.finishedAt = new Date();
+  await transaction.save();
+
+  await logBalanceChange(
+    user._id,
+    transaction.priceAmount,
+    "credit",
+    transaction.description || "Support deposit request confirmed",
+    user.balance
+  );
+
+  const response = formatResponse(
+    true,
+    {
+      transactionId: transaction._id,
+      amountAdded: transaction.priceAmount,
+      newBalance: user.balance
+    },
+    "Deposit request confirmed successfully"
+  );
+
+  res.status(response.statusCode).json(response);
+});
+
 module.exports = {
   // Transaction management
   getUserTransactions,
@@ -836,6 +921,7 @@ module.exports = {
   addBalance,
   deductBalance,
   confirmPartialPayment,
+  confirmSupportDeposit,
   deductBalanceForLookup,
   getAllTransactions,
 

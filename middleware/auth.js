@@ -90,6 +90,21 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
+// Check if user is admin or support user
+const isStaff = (req, res, next) => {
+  if (!req.user) {
+    const response = formatResponse(false, null, 'Authentication required', 401);
+    return res.status(response.statusCode).json(response);
+  }
+  
+  if (req.user.role !== 'admin' && req.user.role !== 'user') {
+    const response = formatResponse(false, null, 'Staff access required', 403);
+    return res.status(response.statusCode).json(response);
+  }
+  
+  next();
+};
+
 // Check if user is client
 const isClient = (req, res, next) => {
   if (!req.user) {
@@ -112,7 +127,7 @@ const isAuthenticated = (req, res, next) => {
     return res.status(response.statusCode).json(response);
   }
   
-  if (!['admin', 'client'].includes(req.user.role)) {
+  if (!['admin', 'client', 'user'].includes(req.user.role)) {
     const response = formatResponse(false, null, 'Invalid user role', 403);
     return res.status(response.statusCode).json(response);
   }
@@ -168,6 +183,7 @@ const checkBalance = (minimumBalance = 0) => {
 module.exports = {
   authenticateToken,
   isAdmin,
+  isStaff,
   isClient,
   isAuthenticated,
   optionalAuth,

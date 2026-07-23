@@ -40,8 +40,8 @@ const validateUserData = (userData, isUpdate = false) => {
   if (!isUpdate || userData.role) {
     if (!userData.role) {
       errors.push("Role is required");
-    } else if (!["admin", "client"].includes(userData.role)) {
-      errors.push("Role must be either admin or client");
+    } else if (!["admin", "client", "user"].includes(userData.role)) {
+      errors.push("Role must be either admin, client, or user");
     }
   }
 
@@ -101,7 +101,9 @@ const getAllUsers = asyncHandler(async (req, res) => {
   // Build filter object
   const filter = {};
 
-  if (role) {
+  if (req.user.role === "user") {
+    filter.role = "client";
+  } else if (role) {
     filter.role = role;
   }
 
@@ -153,6 +155,12 @@ const getUserById = asyncHandler(async (req, res) => {
 
   if (!user) {
     const response = formatResponse(false, null, "User not found", 404);
+    return res.status(response.statusCode).json(response);
+  }
+
+  // Prevent support users from viewing non-client profiles
+  if (req.user.role === "user" && user.role !== "client") {
+    const response = formatResponse(false, null, "Not authorized to view this user", 403);
     return res.status(response.statusCode).json(response);
   }
 
@@ -323,30 +331,18 @@ const addBalance = asyncHandler(async (req, res) => {
     return res.status(response.statusCode).json(response);
   }
 
-  const oldBalance = user.balance;
-  user.balance += parseFloat(amount);
-  await user.save();
-
-  const response = formatResponse(
-    true,
-    {
-      userId: user._id,
-      oldBalance,
-      newBalance: user.balance,
-      amountAdded: parseFloat(amount),
-      description: description || "Balance added by admin",
-    },
-    "Balance added successfully"
-  );
-
   const generateTransactionId = () => {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 8);
     return `TXN-${timestamp}-${random}`;
   };
 
-  // generate a transaction id
   const transactionId = generateTransactionId();
+
+  // Admin user: Apply balance immediately
+  const oldBalance = user.balance;
+  user.balance += parseFloat(amount);
+  await user.save();
 
   // create a payment record
   const payment = new Payment({
@@ -361,11 +357,22 @@ const addBalance = asyncHandler(async (req, res) => {
     paymentId: transactionId,
     adminUserId: req.user._id,
     payAddress: "admin",
-    
   });
   await payment.save();
 
   await logBalanceChange(user._id, parseFloat(amount), "credit", description, user.balance);
+
+  const response = formatResponse(
+    true,
+    {
+      userId: user._id,
+      oldBalance,
+      newBalance: user.balance,
+      amountAdded: parseFloat(amount),
+      description: description || "Balance added by admin",
+    },
+    "Balance added successfully"
+  );
 
   res.status(response.statusCode).json(response);
 });
